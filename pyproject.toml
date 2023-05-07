@@ -6,10 +6,19 @@ authors = ["Carlos Cardoso Dias <carlosdias.dev@gmail.com>"]
 readme = "README.md"
 packages = [{include = "whisper_cpp_python"}]
 
+[tool.poetry.build]
+generate-setup-file = false
+script = "build.py"
+
 [tool.poetry.dependencies]
 python = "^3.9"
+librosa = "^0.10.0.post2"
 
+
+[tool.poetry.group.dev.dependencies]
+pycparser = "^2.21"
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=1.0.0", "scikit-build", "cmake", "ninja"]
 build-backend = "poetry.core.masonry.api"
+
