@@ -1,4 +1,4 @@
-import src.whisper_cpp as whisper_cpp
+from . import whisper_cpp
 import ctypes
 import librosa
 

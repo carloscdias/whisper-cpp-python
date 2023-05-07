@@ -5,3 +5,4 @@ whisper_cpp_python/whisper_cpp.py
 *.so
 *.dll
 *.dylib
+__pycache__/
