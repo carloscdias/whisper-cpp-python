@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "whisper_cpp_python"
-version = "0.1.1"
+version = "0.1.2"
 description = ""
 authors = ["Carlos Cardoso Dias <carlosdias.dev@gmail.com>"]
 readme = "README.md"

@@ -93,7 +93,7 @@ class WhisperCppFileGen():
             return WhisperCppFileGen.get_nested_type(node.type)
         return typ
 
-    def __init__(self, filename, fake_libc = 'vendor/pycparser/utils/fake_libc_include'):
+    def __init__(self, filename, fake_libc = 'whisper_cpp_python/vendor/pycparser/utils/fake_libc_include'):
         self.ast = parse_file(filename, use_cpp=True, cpp_args=['-E', f'-I{fake_libc}'], cpp_path='gcc')
         self.blocks = []
         self._output = None
@@ -217,7 +217,7 @@ def build(setup_kwargs: Dict[str, Any]) -> None:
     skbuild.setup(**setup_kwargs, script_args=["build_ext"])
 
     src_dir = Path(skbuild.constants.CMAKE_INSTALL_DIR()) / "lib"
-    dest_dir = Path("whisper_cpp_python")
+    dest_dir = Path(skbuild.constants.CMAKE_INSTALL_DIR()) / Path("whisper_cpp_python")
 
     # Delete C-extensions copied in previous runs, just in case.
     remove_files(dest_dir, "**/*.so")
