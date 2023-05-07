@@ -1,3 +1,7 @@
 build
 _skbuild
 dist
+whisper_cpp_python/whisper_cpp.py
+*.so
+*.dll
+*.dylib

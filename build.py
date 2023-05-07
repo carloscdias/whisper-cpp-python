@@ -4,6 +4,7 @@ import shutil
 from distutils import log as distutils_log
 from pathlib import Path
 from typing import Any, Dict
+from whisper_cpp_file_gen import WhisperCppFileGen
 
 import skbuild
 import skbuild.constants
@@ -13,18 +14,25 @@ __all__ = ("build",)
 
 def build(setup_kwargs: Dict[str, Any]) -> None:
     """Build C-extensions."""
-    skbuild.setup(**setup_kwargs, script_args=["build_ext", "build"])
+    skbuild.setup(**setup_kwargs, script_args=["build_ext"])
 
-    src_dir = Path(skbuild.constants.CMAKE_INSTALL_DIR()) / "vendor" / "whisper.cpp"
-    print(src_dir)
+    src_dir = Path(skbuild.constants.CMAKE_INSTALL_DIR()) / "lib"
     dest_dir = Path("whisper_cpp_python")
-    print(dest_dir)
 
     # Delete C-extensions copied in previous runs, just in case.
     remove_files(dest_dir, "**/*.so")
+    remove_files(dest_dir, "**/*.dll")
+    remove_files(dest_dir, "**/*.dylib")
 
     # Copy built C-extensions back to the project.
     copy_files(src_dir, dest_dir, "**/*.so")
+    copy_files(src_dir, dest_dir, "**/*.dll")
+    copy_files(src_dir, dest_dir, "**/*.dylib")
+
+    # generate whisper_cpp.py with whisper.h header file
+    c_header_file = Path(skbuild.constants.CMAKE_INSTALL_DIR()) / "include" / "whisper.h"
+    file_gen = WhisperCppFileGen(c_header_file)
+    file_gen.output(dest_dir / "whisper_cpp.py")
 
 
 def remove_files(target_dir: Path, pattern: str) -> None:
@@ -51,4 +59,4 @@ def copy_files(src_dir: Path, dest_dir: Path, pattern: str) -> None:
 
 
 if __name__ == "__main__":
-    build({})
+    build({'packages': ['whisper_cpp_python']})

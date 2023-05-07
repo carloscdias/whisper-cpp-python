@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "whisper-cpp-python"
+name = "whisper_cpp_python"
 version = "0.1.0"
 description = ""
 authors = ["Carlos Cardoso Dias <carlosdias.dev@gmail.com>"]
@@ -14,11 +14,7 @@ script = "build.py"
 python = "^3.9"
 librosa = "^0.10.0.post2"
 
-
-[tool.poetry.group.dev.dependencies]
-pycparser = "^2.21"
-
 [build-system]
-requires = ["poetry-core>=1.0.0", "scikit-build", "cmake", "ninja"]
+requires = ["poetry-core>=1.0.0", "scikit-build", "cmake", "ninja", "pycparser>=2.21"]
 build-backend = "poetry.core.masonry.api"
 

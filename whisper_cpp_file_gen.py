@@ -199,6 +199,3 @@ class WhisperCppFileGen():
         self.blocks.append(all_block)
 
 
-filegen = WhisperCppFileGen('vendor/whisper.cpp/whisper.h')
-filegen.print()
-
