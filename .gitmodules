@@ -1,3 +1,6 @@
 [submodule "vendor/whisper.cpp"]
 	path = vendor/whisper.cpp
 	url = https://github.com/ggerganov/whisper.cpp.git
+[submodule "vendor/pycparser"]
+	path = vendor/pycparser
+	url = https://github.com/eliben/pycparser.git
