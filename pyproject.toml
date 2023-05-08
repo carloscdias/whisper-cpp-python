@@ -1,20 +1,19 @@
 [tool.poetry]
 name = "whisper_cpp_python"
-version = "0.1.6"
-description = ""
+version = "0.1.7"
+description = "Python bindings for the whisper.cpp library"
 authors = ["Carlos Cardoso Dias <carlosdias.dev@gmail.com>"]
+license = "MIT"
 readme = "README.md"
+homepage = "https://github.com/carloscdias/whisper-cpp-python"
+repository = "https://github.com/carloscdias/whisper-cpp-python"
 packages = [{include = "whisper_cpp_python"}]
-
-[tool.poetry.build]
-generate-setup-file = false
-script = "build.py"
 
 [tool.poetry.dependencies]
 python = "^3.9"
 librosa = "^0.10.0.post2"
 
 [build-system]
-requires = ["poetry-core>=1.0.0", "scikit-build", "cmake", "ninja", "pycparser>=2.21"]
-build-backend = "poetry.core.masonry.api"
+requires = ["setuptools>=42", "scikit-build", "cmake", "ninja", "pycparser>=2.21"]
+build-backend = "setuptools.build_meta"
 
