@@ -215,7 +215,7 @@ if __name__ == '__main__':
         description="A Python wrapper for whisper.cpp",
         long_description=long_description,
         long_description_content_type="text/markdown",
-        version="0.1.7",
+        version="0.1.8",
         author="Carlos Cardoso Dias",
         author_email="carlosdias.dev@gmail.com",
         license="MIT",
