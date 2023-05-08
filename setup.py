@@ -1,12 +1,8 @@
-"""Build script."""
-
-import shutil
-from distutils import log as distutils_log
-from pathlib import Path
-from typing import Any, Dict
-
-import skbuild
+from skbuild import setup
 import skbuild.constants
+import shutil
+
+from pathlib import Path
 
 from pycparser import c_ast, parse_file
 
@@ -93,7 +89,7 @@ class WhisperCppFileGen():
             return WhisperCppFileGen.get_nested_type(node.type)
         return typ
 
-    def __init__(self, filename, fake_libc = 'whisper_cpp_python/vendor/pycparser/utils/fake_libc_include'):
+    def __init__(self, filename, fake_libc = 'vendor/pycparser/utils/fake_libc_include'):
         self.ast = parse_file(filename, use_cpp=True, cpp_args=['-E', f'-I{fake_libc}'], cpp_path='gcc')
         self.blocks = []
         self._output = None
@@ -209,36 +205,6 @@ class WhisperCppFileGen():
         self.blocks.append(all_block)
 
 
-__all__ = ("build",)
-
-
-def build(setup_kwargs: Dict[str, Any]) -> None:
-    """Build C-extensions."""
-    skbuild.setup(**setup_kwargs, script_args=["build_ext"])
-
-    src_dir = Path(skbuild.constants.CMAKE_INSTALL_DIR())
-    lib_dir = src_dir / "lib"
-    dest_dir = Path("whisper_cpp_python")
-    vendor = dest_dir / Path("vendor")
-
-
-    # Delete C-extensions copied in previous runs, just in case.
-    remove_files(dest_dir, "**/*.so")
-    remove_files(dest_dir, "**/*.dll")
-    remove_files(dest_dir, "**/*.dylib")
-
-    # Copy built C-extensions back to the project.
-    copy_files(lib_dir, dest_dir, "**/*.so")
-    copy_files(lib_dir, dest_dir, "**/*.dll")
-    copy_files(lib_dir, dest_dir, "**/*.dylib")
-
-    # generate whisper_cpp.py with whisper.h header file
-    c_header_file = src_dir / "include" / "whisper.h"
-    file_gen = WhisperCppFileGen(c_header_file, fake_libc = f'{dest_dir}/vendor/pycparser/utils/fake_libc_include')
-    file_gen.output(dest_dir / "whisper_cpp.py")
-    shutil.rmtree(vendor)
-
-
 def remove_files(target_dir: Path, pattern: str) -> None:
     """Delete files matched with a glob pattern in a directory tree."""
     for path in target_dir.glob(pattern):
@@ -246,7 +212,6 @@ def remove_files(target_dir: Path, pattern: str) -> None:
             shutil.rmtree(path)
         else:
             path.unlink()
-        distutils_log.info(f"removed {path}")
 
 
 def copy_files(src_dir: Path, dest_dir: Path, pattern: str) -> None:
@@ -259,14 +224,53 @@ def copy_files(src_dir: Path, dest_dir: Path, pattern: str) -> None:
         else:
             dest.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src, dest)
-            distutils_log.info(f"copied {src} to {dest}")
 
 
-if __name__ == "__main__":
-    build({
-        'packages': ['whisper_cpp_python'],
-        'cmake_args': [
-            '-DBUILD_SHARED_LIBS:BOOL=ON',
-        ],
-        'cmake_source_dir': 'whisper_cpp_python/vendor/whisper.cpp',
-    })
+this_directory = Path(__file__).parent
+long_description = (this_directory / "README.md").read_text(encoding="utf-8")
+
+setup(
+    name="whisper_cpp_python",
+    description="A Python wrapper for whisper.cpp",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    version="0.1.6",
+    author="Carlos Cardoso Dias",
+    author_email="carlosdias.dev@gmail.com",
+    license="MIT",
+    package_dir={"whisper_cpp_python": "whisper_cpp_python"},
+    packages=["whisper_cpp_python"],
+    install_requires=[
+        "librosa>=0.10.0.post2",
+    ],
+    python_requires=">=3.9",
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+    ],
+    #script_args=["build_ext"],
+    #cmake_args=['-DBUILD_SHARED_LIBS:BOOL=ON'],
+    cmake_with_sdist=True,
+)
+
+# Copy built C-extensions back to the project.
+install_dir = Path(skbuild.constants.CMAKE_INSTALL_DIR())
+lib_dir = install_dir / "lib"
+include_dir = install_dir / "include"
+dest_dir = Path("whisper_cpp_python")
+# Delete C-extensions copied in previous runs, just in case.
+remove_files(dest_dir, "**/*.so")
+remove_files(dest_dir, "**/*.dll")
+remove_files(dest_dir, "**/*.dylib")
+# Copy built C-extensions back to the project.
+copy_files(lib_dir, dest_dir, "**/*.so")
+copy_files(lib_dir, dest_dir, "**/*.dll")
+copy_files(lib_dir, dest_dir, "**/*.dylib")
+
+# generate whisper_cpp.py with whisper.h header file
+c_header_file = include_dir / "whisper.h"
+file_gen = WhisperCppFileGen(c_header_file)
+file_gen.output(dest_dir / "whisper_cpp.py")
+
