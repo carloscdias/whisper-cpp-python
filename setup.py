@@ -205,72 +205,40 @@ class WhisperCppFileGen():
         self.blocks.append(all_block)
 
 
-def remove_files(target_dir: Path, pattern: str) -> None:
-    """Delete files matched with a glob pattern in a directory tree."""
-    for path in target_dir.glob(pattern):
-        if path.is_dir():
-            shutil.rmtree(path)
-        else:
-            path.unlink()
+if __name__ == '__main__':
+    this_directory = Path(__file__).parent
+    long_description = (this_directory / "README.md").read_text(encoding="utf-8")
 
+    # Copy built C-extensions back to the project.
+    setup(
+        name="whisper_cpp_python",
+        description="A Python wrapper for whisper.cpp",
+        long_description=long_description,
+        long_description_content_type="text/markdown",
+        version="0.1.6",
+        author="Carlos Cardoso Dias",
+        author_email="carlosdias.dev@gmail.com",
+        license="MIT",
+        package_dir={"whisper_cpp_python": "whisper_cpp_python"},
+        packages=["whisper_cpp_python"],
+        install_requires=[
+            "librosa>=0.10.0.post2",
+        ],
+        python_requires=">=3.9",
+        classifiers=[
+            "Programming Language :: Python :: 3",
+            "Programming Language :: Python :: 3.9",
+            "Programming Language :: Python :: 3.10",
+            "Programming Language :: Python :: 3.11",
+        ],
+        include_package_data=True,
+        cmake_process_manifest_hook=lambda x: list(filter(lambda y: not y.endswith('.h'), x)),
+    )
 
-def copy_files(src_dir: Path, dest_dir: Path, pattern: str) -> None:
-    """Copy files matched with a glob pattern in a directory tree to another."""
-    for src in src_dir.glob(pattern):
-        dest = dest_dir / src.relative_to(src_dir)
-        if src.is_dir():
-            # NOTE: inefficient if subdirectories also match to the pattern.
-            copy_files(src, dest, "*")
-        else:
-            dest.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(src, dest)
+    # generate whisper_cpp.py with whisper.h header file
+    dest_dir = Path("whisper_cpp_python")
+    c_header_file = "vendor/whisper.cpp/whisper.h"
+    file_gen = WhisperCppFileGen(c_header_file)
+    file_gen.output(dest_dir / "whisper_cpp.py")
 
-
-this_directory = Path(__file__).parent
-long_description = (this_directory / "README.md").read_text(encoding="utf-8")
-
-setup(
-    name="whisper_cpp_python",
-    description="A Python wrapper for whisper.cpp",
-    long_description=long_description,
-    long_description_content_type="text/markdown",
-    version="0.1.6",
-    author="Carlos Cardoso Dias",
-    author_email="carlosdias.dev@gmail.com",
-    license="MIT",
-    package_dir={"whisper_cpp_python": "whisper_cpp_python"},
-    packages=["whisper_cpp_python"],
-    install_requires=[
-        "librosa>=0.10.0.post2",
-    ],
-    python_requires=">=3.9",
-    classifiers=[
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
-        "Programming Language :: Python :: 3.11",
-    ],
-    #script_args=["build_ext"],
-    #cmake_args=['-DBUILD_SHARED_LIBS:BOOL=ON'],
-    cmake_with_sdist=True,
-)
-
-# Copy built C-extensions back to the project.
-install_dir = Path(skbuild.constants.CMAKE_INSTALL_DIR())
-lib_dir = install_dir / "lib"
-include_dir = install_dir / "include"
-dest_dir = Path("whisper_cpp_python")
-# Delete C-extensions copied in previous runs, just in case.
-remove_files(dest_dir, "**/*.so")
-remove_files(dest_dir, "**/*.dll")
-remove_files(dest_dir, "**/*.dylib")
-# Copy built C-extensions back to the project.
-copy_files(lib_dir, dest_dir, "**/*.so")
-copy_files(lib_dir, dest_dir, "**/*.dll")
-copy_files(lib_dir, dest_dir, "**/*.dylib")
-
-# generate whisper_cpp.py with whisper.h header file
-c_header_file = include_dir / "whisper.h"
-file_gen = WhisperCppFileGen(c_header_file)
-file_gen.output(dest_dir / "whisper_cpp.py")
 

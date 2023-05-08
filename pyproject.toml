@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "whisper_cpp_python"
-version = "0.1.6"
+version = "0.1.7"
 description = "Python bindings for the whisper.cpp library"
 authors = ["Carlos Cardoso Dias <carlosdias.dev@gmail.com>"]
 license = "MIT"
