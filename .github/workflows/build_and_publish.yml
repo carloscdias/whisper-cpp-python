@@ -1,0 +1,33 @@
+name: Publish Package to Pypi
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/whisper-cpp-python
+    permissions:
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11"]
+    steps:
+      - name: Checkout repository
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+        python-version: ${{ matrix.python-version }}
+      - name: Build package
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade build 
+          python -m build -s
+      - name: Publish to Pypi
+        uses: pypa/gh-action-pypi-publish@release/v1
+
