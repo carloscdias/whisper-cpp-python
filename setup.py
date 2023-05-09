@@ -19,7 +19,7 @@ def _load_shared_library(lib_base_name: str):
     if sys.platform.startswith("linux"):
         lib_ext = ".so"
     elif sys.platform == "darwin":
-        lib_ext = ".dylib"
+        lib_ext = ".so"
     elif sys.platform == "win32":
         lib_ext = ".dll"
     else:
@@ -168,8 +168,12 @@ class WhisperCppFileGen():
         if typ == c_ast.FuncDecl:
             params = [self.get_ctypes_type(t) for t in node.args.params]
             params = [self.replace[t] if t in self.replace else t for t in params]
-            return 'ctypes.CFUNCTYPE(' + ', '.join(params) + ')'
+            ret = self.get_ctypes_type(node.type)
+            ret = ret if ret else 'None'
+            return 'ctypes.CFUNCTYPE(' + ret + (', ' if len(params) > 0 else '') + ', '.join(params) + ')'
         if typ == c_ast.PtrDecl:
+            if node.type and type(node.type) == c_ast.FuncDecl:
+                return self.get_ctypes_type(node.type)
             return 'ctypes.POINTER(' + self.get_ctypes_type(node.type) + ')'
         if typ == c_ast.Struct:
             name = node.name if node.name else name
