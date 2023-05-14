@@ -1,5 +1,5 @@
 from . import whisper_cpp
-from .whisper_types import WhisperChunk
+from .whisper_types import WhisperResult, WhisperSegment, WhisperToken
 from typing import List, Literal, Any
 import ctypes
 import librosa
@@ -34,70 +34,91 @@ class Whisper():
         result = self._full(data)
         return self._parse_format(result, response_format)
 
-    def _full(self, data) -> List[WhisperChunk]:
-        chunks: List[WhisperChunk] = []
+    def _full(self, data) -> WhisperResult:
         # run the inference
-        result = whisper_cpp.whisper_full(ctypes.c_void_p(self.context), self.params, data.ctypes.data_as(ctypes.POINTER(ctypes.c_float)), len(data))
-
-        if result != 0:
+        r = whisper_cpp.whisper_full(ctypes.c_void_p(self.context), self.params, data.ctypes.data_as(ctypes.POINTER(ctypes.c_float)), len(data))
+        if r != 0:
             raise "Error: {}".format(result)
 
+        result: WhisperResult = {
+            "task": "translate" if self.params.translate else "transcribe",
+            "language": self.params.language,
+            "duration": librosa.get_duration(y=data, sr=Whisper.WHISPER_SR),
+        }
+
+        segments: List[WhisperSegment] = []
+        all_text = ''
         n_segments = whisper_cpp.whisper_full_n_segments(ctypes.c_void_p(self.context))
         for i in range(n_segments):
             t0  = whisper_cpp.whisper_full_get_segment_t0(ctypes.c_void_p(self.context), i)/100.0
             t1  = whisper_cpp.whisper_full_get_segment_t1(ctypes.c_void_p(self.context), i)/100.0
             txt = whisper_cpp.whisper_full_get_segment_text(ctypes.c_void_p(self.context), i).decode('utf-8')
-            chunks.append({
+            all_text += txt
+            n_tokens = whisper_cpp.whisper_full_n_tokens(ctypes.c_void_p(self.context), i)
+            tokens: List[WhisperToken] = []
+            for j in range(n_tokens):
+                token_data = whisper_cpp.whisper_full_get_token_data(ctypes.c_void_p(self.context), i, j)
+                tokens.append({
+                    "id": token_data.id,
+                    "prob": token_data.p,
+                    "logprob": token_data.plog,
+                    "pt": token_data.pt,
+                    "pt_sum": token_data.ptsum,
+                })
+            segments.append({
                 "start": t0,
                 "end": t1,
                 "text": txt,
+                "tokens": tokens,
             })
-        return chunks
 
-    def _parse_format(self, chunks: List[WhisperChunk], response_format: Literal["json", "text", "srt", "verbose_json", "vtt"]):
+        result["segments"] = segments
+        result["text"] = all_text.strip()
+        return result
+
+    def _parse_format(self, result: WhisperResult, response_format: Literal["json", "text", "srt", "verbose_json", "vtt"]):
         return {
             "json": self._parse_format_json,
             "text": self._parse_format_text,
             "srt": self._parse_format_srt,
             "verbose_json": self._parse_format_verbose_json,
             "vtt": self._parse_format_vtt,
-        }[response_format](chunks)
+        }[response_format](result)
 
-    def _parse_format_json(self, chunks: List[WhisperChunk]):
+    def _parse_format_verbose_json(self, result: WhisperResult):
         return {
-            "text": ''.join([c['text'] for c in chunks]),
-        }
-
-    def _parse_format_text(self, chunks: List[WhisperChunk]):
-        return ''.join([c['text'] for c in chunks])
-
-    def _parse_format_srt(self, chunks: List[WhisperChunk]):
-        return '\n'.join([f'{i + 1}\n{Whisper.format_time(c["start"])} --> {Whisper.format_time(c["end"])}\n{c["text"]}\n' for i, c in enumerate(chunks)])
-
-    def _parse_format_verbose_json(self, chunks: List[WhisperChunk]):
-        segments = [{
-                "id": 0,
-                "seek": 0,
+            "task": result["task"],
+            "language": result["language"],
+            "duration": result["duration"],
+            "text": result["text"],
+            "segments": [{
+                "id": i,
+                "seek": s['start'],
                 "start": s['start'],
                 "end": s['end'],
                 "text": s['text'],
-                "tokens": [],
-                "temperature": 0,
-                "avg_logprob": -0.12,
-                "compression_ratio": 0.84,
-                "no_speech_prob": 0.12,
+                "tokens": [t["id"] for t in s["tokens"]],
+                "temperature": self.params.temperature + self.params.temperature_inc * i,
+                "avg_logprob": sum([t["logprob"] for t in s["tokens"]])/len(s["tokens"]),
+                "compression_ratio": self.params.entropy_thold,
+                "no_speech_prob": 0.0,
                 "transient": False,
-            } for s in chunks]
-        return {
-            "task": "",
-            "language": "english",
-            "duration": 9.28,
-            "segments": segments,
-            "text": ''.join([c['text'] for c in chunks]),
+            } for i, s in enumerate(result["segments"])],
         }
 
-    def _parse_format_vtt(self, chunks: List[WhisperChunk]):
-        return '\n'.join([f'{i + 1}\n{Whisper.format_time(c["start"])} --> {Whisper.format_time(c["end"])} align:middle\n{c["text"]}\n' for i, c in enumerate(chunks)])
+    def _parse_format_json(self, result: WhisperResult):
+        return {
+            "text": result["text"],
+        }
+
+    def _parse_format_text(self, result: WhisperResult):
+        return result["text"]
+
+    def _parse_format_srt(self, result: WhisperResult):
+        return '\n'.join([f'{i + 1}\n{Whisper.format_time(s["start"])} --> {Whisper.format_time(s["end"])}\n{s["text"]}\n' for i, s in enumerate(result["segments"])])
+
+    def _parse_format_vtt(self, result: WhisperResult):
+        return '\n'.join([f'{i + 1}\n{Whisper.format_time(s["start"])} --> {Whisper.format_time(s["end"])} align:middle\n{s["text"]}\n' for i, s in enumerate(result["segments"])])
 
     def __dealloc__(self):
         # free the memory

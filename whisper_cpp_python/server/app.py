@@ -17,12 +17,6 @@ class Settings(BaseSettings):
     model: str
     strategy: int = 0
     n_threads: int = max((os.cpu_count() or 2) // 2, 1)
-    f16_kv: bool = True
-    use_mlock: bool = False  # This causes a silent failure on platforms that don't support mlock (e.g. Windows) took forever to figure out...
-    use_mmap: bool = True
-    embedding: bool = True
-    logits_all: bool = False
-    cache: bool = False  # WARNING: This is an experimental feature
 
 
 router = APIRouter()
@@ -48,6 +42,8 @@ def create_app(settings: Optional[Settings] = None):
     global whisper
     whisper = whisper_cpp_python.Whisper(
         model_path=settings.model,
+        strategy=settings.strategy,
+        n_threads=settings.n_threads,
     )
     return app
 
