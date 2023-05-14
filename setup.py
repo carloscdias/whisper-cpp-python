@@ -219,15 +219,19 @@ if __name__ == '__main__':
         description="A Python wrapper for whisper.cpp",
         long_description=long_description,
         long_description_content_type="text/markdown",
-        version="0.1.10",
+        version="0.2.0",
         author="Carlos Cardoso Dias",
         author_email="carlosdias.dev@gmail.com",
         license="MIT",
-        package_dir={"whisper_cpp_python": "whisper_cpp_python"},
-        packages=["whisper_cpp_python"],
+        package_dir={"whisper_cpp_python": "whisper_cpp_python", "whisper_cpp_python.server": "whisper_cpp_python/server"},
+        packages=["whisper_cpp_python", "whisper_cpp_python.server"],
         install_requires=[
             "librosa>=0.10.0.post2",
+            "typing-extensions>=4.5.0",
         ],
+        extras_require={
+            "server": ["uvicorn>=0.21.1", "fastapi>=0.95.0", "sse-starlette>=1.3.3", "python-multipart>=0.0.6"],
+        },
         python_requires=">=3.9",
         classifiers=[
             "Programming Language :: Python :: 3",
