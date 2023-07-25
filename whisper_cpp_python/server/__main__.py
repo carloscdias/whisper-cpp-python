@@ -24,7 +24,7 @@ from whisper_cpp_python.server.app import create_app, Settings
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    for name, field in Settings.__fields__.items():
+    for name, field in Settings.model_fields.items():
         description = field.field_info.description
         if field.default is not None and description is not None:
             description += f" (default: {field.default})"
