@@ -9,7 +9,9 @@ import whisper_cpp_python
 
 from fastapi import Depends, FastAPI, APIRouter, File, Body
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, BaseSettings, Field
+
+from pydantic import BaseModel, Field
+from pydantic_settings import BaseSettings
 from sse_starlette.sse import EventSourceResponse
 
 
