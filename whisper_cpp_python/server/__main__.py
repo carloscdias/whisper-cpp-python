@@ -31,7 +31,7 @@ if __name__ == "__main__":
         parser.add_argument(
             f"--{name}",
             dest=name,
-            type=field.type_,
+            type=field.type,
             help=description,
         )
 
