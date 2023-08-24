@@ -19,7 +19,7 @@ def _load_shared_library(lib_base_name: str):
     if sys.platform.startswith("linux"):
         lib_ext = ".so"
     elif sys.platform == "darwin":
-        lib_ext = ".so"
+        lib_ext = ".dylib"
     elif sys.platform == "win32":
         lib_ext = ".dll"
     else:
@@ -219,7 +219,7 @@ if __name__ == '__main__':
         description="A Python wrapper for whisper.cpp",
         long_description=long_description,
         long_description_content_type="text/markdown",
-        version="0.2.0",
+        version="0.2.1",
         author="Carlos Cardoso Dias",
         author_email="carlosdias.dev@gmail.com",
         license="MIT",
@@ -248,5 +248,3 @@ if __name__ == '__main__':
     c_header_file = "vendor/whisper.cpp/whisper.h"
     file_gen = WhisperCppFileGen(c_header_file)
     file_gen.output(dest_dir / "whisper_cpp.py")
-
-
